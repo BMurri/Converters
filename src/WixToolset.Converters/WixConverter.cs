@@ -56,6 +56,7 @@ namespace WixToolset.Converters
         private static readonly XName PermissionExElementName = WixNamespace + "PermissionEx";
         private static readonly XName ProductElementName = WixNamespace + "Product";
         private static readonly XName ProgressTextElementName = WixNamespace + "ProgressText";
+        private static readonly XName PropertyRefElementName = WixNamespace + "PropertyRef";
         private static readonly XName PublishElementName = WixNamespace + "Publish";
         private static readonly XName MultiStringValueElementName = WixNamespace + "MultiStringValue";
         private static readonly XName RequiredPrivilegeElementName = WixNamespace + "RequiredPrivilege";
@@ -70,6 +71,7 @@ namespace WixToolset.Converters
         private static readonly XName UtilPermissionExElementName = WixUtilNamespace + "PermissionEx";
         private static readonly XName UtilXmlConfigElementName = WixUtilNamespace + "XmlConfig";
         private static readonly XName CustomActionElementName = WixNamespace + "CustomAction";
+        private static readonly XName CustomActionRefElementName = WixNamespace + "CustomActionRef";
         private static readonly XName PropertyElementName = WixNamespace + "Property";
         private static readonly XName Wix4ElementName = WixNamespace + "Wix";
         private static readonly XName Wix3ElementName = Wix3Namespace + "Wix";
@@ -155,11 +157,13 @@ namespace WixToolset.Converters
                 { WixConverter.PermissionExElementName, this.ConvertPermissionExElement },
                 { WixConverter.ProductElementName, this.ConvertProductElement },
                 { WixConverter.ProgressTextElementName, this.ConvertProgressTextElement },
+                { WixConverter.PropertyRefElementName, this.ConvertPropertyRefElement },
                 { WixConverter.PublishElementName, this.ConvertPublishElement },
                 { WixConverter.MultiStringValueElementName, this.ConvertMultiStringValueElement },
                 { WixConverter.RequiredPrivilegeElementName, this.ConvertRequiredPrivilegeElement },
                 { WixConverter.RowElementName, this.ConvertRowElement },
                 { WixConverter.CustomActionElementName, this.ConvertCustomActionElement },
+                { WixConverter.CustomActionRefElementName, this.ConvertCustomActionRefElement },
                 { WixConverter.ServiceArgumentElementName, this.ConvertServiceArgumentElement },
                 { WixConverter.SetDirectoryElementName, this.ConvertSetDirectoryElement },
                 { WixConverter.SetPropertyElementName, this.ConvertSetPropertyElement },
@@ -624,6 +628,110 @@ namespace WixToolset.Converters
                         ));
                     xCondition.Remove();
                 }
+            }
+        }
+
+        private void ConvertPropertyRefElement(XElement element)
+        {
+            var newElementName = String.Empty;
+
+            var id = element.Attribute("Id");
+            switch (id?.Value)
+            {
+                case "WIX_SUITE_BACKOFFICE":
+                case "WIX_SUITE_BLADE":
+                case "WIX_SUITE_COMMUNICATIONS":
+                case "WIX_SUITE_COMPUTE_SERVER":
+                case "WIX_SUITE_DATACENTER":
+                case "WIX_SUITE_EMBEDDED_RESTRICTED":
+                case "WIX_SUITE_EMBEDDEDNT":
+                case "WIX_SUITE_ENTERPRISE":
+                case "WIX_SUITE_MEDIACENTER":
+                case "WIX_SUITE_PERSONAL":
+                case "WIX_SUITE_SECURITY_APPLIANCE":
+                case "WIX_SUITE_SERVERR2":
+                case "WIX_SUITE_SINGLEUSERTS":
+                case "WIX_SUITE_SMALLBUSINESS":
+                case "WIX_SUITE_SMALLBUSINESS_RESTRICTED":
+                case "WIX_SUITE_STARTER":
+                case "WIX_SUITE_STORAGE_SERVER":
+                case "WIX_SUITE_TABLETPC":
+                case "WIX_SUITE_TERMINAL":
+                case "WIX_SUITE_WH_SERVER":
+                    newElementName = "QueryWindowsSuiteInfo";
+                    break;
+                case "WIX_DIR_ADMINTOOLS":
+                case "WIX_DIR_ALTSTARTUP":
+                case "WIX_DIR_CDBURN_AREA":
+                case "WIX_DIR_COMMON_ADMINTOOLS":
+                case "WIX_DIR_COMMON_ALTSTARTUP":
+                case "WIX_DIR_COMMON_DOCUMENTS":
+                case "WIX_DIR_COMMON_FAVORITES":
+                case "WIX_DIR_COMMON_MUSIC":
+                case "WIX_DIR_COMMON_PICTURES":
+                case "WIX_DIR_COMMON_VIDEO":
+                case "WIX_DIR_COOKIES":
+                case "WIX_DIR_DESKTOP":
+                case "WIX_DIR_HISTORY":
+                case "WIX_DIR_INTERNET_CACHE":
+                case "WIX_DIR_MYMUSIC":
+                case "WIX_DIR_MYPICTURES":
+                case "WIX_DIR_MYVIDEO":
+                case "WIX_DIR_NETHOOD":
+                case "WIX_DIR_PERSONAL":
+                case "WIX_DIR_PRINTHOOD":
+                case "WIX_DIR_PROFILE":
+                case "WIX_DIR_RECENT":
+                case "WIX_DIR_RESOURCES":
+                    newElementName = "QueryWindowsDirectories";
+                    break;
+                case "WIX_DWM_COMPOSITION_ENABLED":
+                case "WIX_WDDM_DRIVER_PRESENT":
+                    newElementName = "QueryWindowsDriverInfo";
+                    break;
+                case "WIX_ACCOUNT_LOCALSYSTEM":
+                case "WIX_ACCOUNT_LOCALSERVICE":
+                case "WIX_ACCOUNT_NETWORKSERVICE":
+                case "WIX_ACCOUNT_ADMINISTRATORS":
+                case "WIX_ACCOUNT_USERS":
+                case "WIX_ACCOUNT_GUESTS":
+                case "WIX_ACCOUNT_PERFLOGUSERS":
+                case "WIX_ACCOUNT_PERFLOGUSERS_NODOMAIN":
+                    newElementName = "QueryWindowsWellKnownSIDs";
+                    break;
+            }
+
+            if (!String.IsNullOrEmpty(newElementName)
+                && this.OnError(ConverterTestType.UtilReferencesReplaced, element, "Custom action and property reference {0} to WixUtilExtension have been replaced with strongly-typed elements.", id))
+            {
+                element.AddAfterSelf(new XElement(WixUtilNamespace + newElementName));
+                element.Remove();
+            }
+        }
+
+        private void ConvertCustomActionRefElement(XElement element)
+        {
+            var newElementName = String.Empty;
+
+            var id = element.Attribute("Id");
+            switch (id?.Value)
+            {
+                case "WixBroadcastSettingChange":
+                case "WixBroadcastEnvironmentChange":
+                case "WixCheckRebootRequired":
+                case "WixExitEarlyWithSuccess":
+                case "WixFailWhenDeferred":
+                case "WixWaitForEvent":
+                case "WixWaitForEventDeferred":
+                    newElementName = id?.Value.Substring(3); // strip leading Wix
+                    break;
+            }
+
+            if (!String.IsNullOrEmpty(newElementName)
+                && this.OnError(ConverterTestType.UtilReferencesReplaced, element, "Custom action and property reference {0} to WixUtilExtension have been replaced with strongly-typed elements.", id))
+            {
+                element.AddAfterSelf(new XElement(WixUtilNamespace + newElementName));
+                element.Remove();
             }
         }
 
@@ -1168,6 +1276,12 @@ namespace WixToolset.Converters
             /// The Feature AllowAdvertise attribute value deprecated.
             /// </summary>
             FeatureAllowAdvertiseValueDeprecated,
+
+            /// <summary>
+            /// Naked custom action and property references replaced with WixUtilExtension elements.
+            /// </summary>
+            UtilReferencesReplaced,
+
         }
     }
 }
